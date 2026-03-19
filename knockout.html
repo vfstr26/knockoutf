@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini Knockout Monitor</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+header{background:#1e293b;padding:1rem 2rem;border-bottom:2px solid #3b82f6}
+header h1{font-size:1.5rem;color:#3b82f6}
+.container{max-width:960px;margin:0 auto;padding:1.5rem}
+.card{background:#1e293b;border-radius:10px;padding:1.5rem;margin-bottom:1.5rem}
+.card h2{margin-bottom:1rem;font-size:.95rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em}
+.steps{display:flex;margin-bottom:1.5rem}
+.step{flex:1;padding:.5rem;text-align:center;font-size:.82rem;background:#1e293b;color:#475569;border-bottom:3px solid #334155}
+.step.active{color:#3b82f6;border-bottom-color:#3b82f6}
+.step.done{color:#22c55e;border-bottom-color:#22c55e}
+.mode-btns{display:flex;gap:.75rem;margin-bottom:1.25rem;flex-wrap:wrap}
+.mode-btn{padding:.55rem 1.2rem;border-radius:6px;border:2px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;font-size:.9rem}
+.mode-btn.active{border-color:#3b82f6;background:#1d4ed8;color:#fff}
+.row{display:flex;gap:.5rem;margin-bottom:.75rem}
+.row input{flex:1;padding:.55rem .9rem;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:.95rem}
+.row input:focus{outline:none;border-color:#3b82f6}
+.tags{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.75rem}
+.tag{background:#334155;border-radius:20px;padding:.3rem .85rem;font-size:.88rem;display:flex;align-items:center;gap:.4rem}
+.tag button{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:1rem;line-height:1}
+.btn{display:inline-block;padding:.55rem 1.3rem;border-radius:7px;border:none;cursor:pointer;font-size:.9rem;font-weight:600}
+.btn-blue{background:#3b82f6;color:#fff}.btn-blue:hover{background:#2563eb}
+.btn-green{background:#22c55e;color:#fff}.btn-green:hover{background:#16a34a}
+.btn-green:disabled{background:#334155;color:#64748b;cursor:not-allowed}
+.btn-amber{background:#d97706;color:#fff}.btn-amber:hover{background:#b45309}
+.btn-ghost{background:transparent;border:2px solid #3b82f6;color:#3b82f6}.btn-ghost:hover{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.btn-red-ghost{background:transparent;border:1px solid #ef4444;color:#ef4444}.btn-red-ghost:hover{background:#ef4444;color:#fff}
+.info{font-size:.85rem;color:#64748b;margin-top:.5rem}
+.mt{margin-top:.75rem}
+.gap{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+.pool{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem}
+.ball{padding:.4rem 1rem;border-radius:20px;background:#334155;font-size:.9rem;cursor:pointer;border:2px solid transparent;user-select:none}
+.ball:hover{border-color:#3b82f6}
+.ball.sel{background:#1d4ed8;border-color:#3b82f6;color:#fff}
+.ball.used{background:#1a2744;color:#475569;cursor:default;pointer-events:none}
+.fx-list{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem}
+.fx-row{display:flex;align-items:center;gap:.6rem;background:#0f172a;border-radius:7px;padding:.5rem .9rem;font-size:.9rem}
+.fx-n{color:#475569;font-size:.8rem;min-width:1.4rem}
+.fx-h{flex:1}.fx-v{color:#475569;font-size:.8rem}.fx-a{flex:1;text-align:right}
+.fx-del{background:none;border:none;color:#ef4444;cursor:pointer;font-size:1rem;margin-left:.3rem}
+.hint{font-size:.85rem;color:#64748b;margin-bottom:.75rem;min-height:1.2em}
+.gtable{width:100%;border-collapse:collapse;margin-bottom:1rem}
+.gtable th{background:#1e3a5f;padding:.55rem .75rem;text-align:left;font-size:.82rem;color:#93c5fd}
+.gtable td{padding:.5rem .75rem;border-bottom:1px solid #1e293b;font-size:.88rem}
+.gtable tr:nth-child(even) td{background:#1a2744}
+.qualify{color:#22c55e;font-weight:600}
+.rlabel{font-size:.82rem;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:1.2rem 0 .4rem}
+.mcard{background:#1e293b;border-radius:8px;padding:.85rem 1rem;margin-bottom:.5rem;display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+.mteam{flex:1;min-width:90px;font-size:.93rem}
+.mteam.win{color:#22c55e;font-weight:700}.mteam.lose{color:#64748b}
+.mvs{color:#475569;font-size:.82rem}
+.sinputs{display:flex;align-items:center;gap:.4rem}
+.sinputs input{width:50px;padding:.38rem;text-align:center;border-radius:5px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:1rem}
+.sinputs input:focus{outline:none;border-color:#3b82f6}
+.ssep{color:#475569}
+.ftbtn{padding:.38rem .85rem;border-radius:5px;border:none;background:#3b82f6;color:#fff;cursor:pointer;font-size:.83rem}
+.ftbtn:hover{background:#2563eb}
+.penbtn{padding:.38rem .85rem;border-radius:5px;border:none;background:#7c3aed;color:#fff;cursor:pointer;font-size:.83rem}
+.penbtn:hover{background:#6d28d9}
+.pen-row{display:flex;align-items:center;gap:.4rem;margin-top:.4rem;width:100%}
+.pen-label{font-size:.75rem;color:#a78bfa;white-space:nowrap}
+.bpen{background:#4c1d95;color:#c4b5fd}
+.mresult{font-size:1.05rem;font-weight:700;letter-spacing:.05em}
+.mbadge{font-size:.76rem;padding:.22rem .55rem;border-radius:10px;white-space:nowrap}
+.bp{background:#1e3a5f;color:#93c5fd}
+.bl{background:#7c2d12;color:#fca5a5;animation:pulse 1.5s infinite}
+.bd{background:#14532d;color:#86efac}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.adv{background:#14532d;border:1px solid #22c55e;border-radius:8px;padding:.85rem 1.1rem;margin-bottom:1rem;color:#86efac;font-size:.9rem}
+.champ{background:linear-gradient(135deg,#78350f,#92400e);border:2px solid #f59e0b;border-radius:10px;padding:1.2rem;text-align:center;margin-top:1rem}
+.champ .trophy{font-size:2.5rem}
+.champ h2{color:#fbbf24;font-size:1.4rem;margin-top:.4rem}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header><h1>⚽ Mini Knockout Monitor</h1><span id="saveind" style="font-size:.75rem;color:#22c55e;margin-left:1rem;opacity:0;transition:opacity .4s"></span></header>
+<div class="container">
+
+  <div class="steps">
+    <div class="step active" id="s1">1 · Teams</div>
+    <div class="step" id="s2">2 · Draw</div>
+    <div class="step" id="s3">3 · Play</div>
+  </div>
+
+  <!-- STEP 1: TEAMS -->
+  <div id="p1" class="card">
+    <h2>Step 1 — Add Teams &amp; Format</h2>
+    <div class="mode-btns">
+      <button class="mode-btn active" id="btnT" onclick="setMode('table')">Group Table (top 2 advance)</button>
+      <button class="mode-btn" id="btnK" onclick="setMode('ko')">Direct Knockout</button>
+    </div>
+    <div class="row">
+      <input id="inp" type="text" placeholder="Team name..." onkeydown="if(event.key==='Enter')addTeam()">
+      <button class="btn btn-blue" onclick="addTeam()">Add Team</button>
+    </div>
+    <div class="tags" id="tags"></div>
+    <p class="info" id="tinfo">Add at least 2 teams.</p>
+    <div class="mt">
+      <button class="btn btn-green" id="toDrawBtn" onclick="goDraw()" disabled>Proceed to Draw →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: DRAW -->
+  <div id="p2" class="card hidden">
+    <h2>Step 2 — Draw Fixtures</h2>
+    <div class="gap">
+      <button class="btn btn-amber" onclick="randomDraw()">🎲 Random Draw</button>
+      <button class="btn btn-ghost" onclick="clearDraw()">Clear</button>
+      <button class="btn btn-ghost" onclick="goTeams()">← Back</button>
+    </div>
+    <p class="hint" id="hint">Click two teams to pair them, or use Random Draw.</p>
+    <div class="pool" id="pool"></div>
+    <div class="fx-list" id="fxlist"></div>
+    <button class="btn btn-green" id="startBtn" onclick="startComp()" disabled>Start Competition</button>
+    <p class="info" id="dinfo"></p>
+  </div>
+
+  <!-- STEP 3: COMPETITION -->
+  <div id="p3" class="hidden">
+    <div id="gSection"></div>
+    <div id="mSection"></div>
+    <div id="cSection"></div>
+    <div class="mt">
+      <button class="btn btn-red-ghost" onclick="resetAll()">Reset / New Competition</button>
+    </div>
+  </div>
+
+</div>
+<script>
+var mode = 'table';
+var teams = [];
+var drawn = [];      // [{home,away}]
+var sel = [];        // manual draw selection
+var matches = [];
+var rounds = {};     // round -> [match]
+var standings = {};
+
+// ── persistence ───────────────────────────────────────────────
+var SAVE_KEY='ko_state';
+function saveState(){
+  try{
+    localStorage.setItem(SAVE_KEY,JSON.stringify({
+      mode:mode,teams:teams,drawn:drawn,
+      matches:matches,rounds:rounds,standings:standings,oddKO:oddKO,
+      _step:currentStep
+    }));
+    var el=$('saveind');
+    if(el){el.textContent='✓ Saved';el.style.opacity='1';setTimeout(function(){el.style.opacity='0';},1500);}
+  }catch(e){}
+}
+function loadState(){
+  try{
+    var raw=localStorage.getItem(SAVE_KEY);
+    if(!raw)return false;
+    var s=JSON.parse(raw);
+    mode=s.mode||'table';
+    teams=s.teams||[];
+    drawn=s.drawn||[];
+    matches=s.matches||[];
+    rounds=s.rounds||{};
+    standings=s.standings||{};
+    oddKO=s.oddKO||{};
+    // restore UI
+    $('btnT').className='mode-btn'+(mode==='table'?' active':'');
+    $('btnK').className='mode-btn'+(mode==='ko'?' active':'');
+    renderTags();checkTeams();
+    var step=s._step||1;
+    if(step===1){show('p1');hide('p2');hide('p3');setStep(1);}
+    else if(step===2){
+      hide('p1');show('p2');hide('p3');setStep(2);
+      renderPool();renderFixtures();checkDraw();
+    } else if(step===3){
+      hide('p1');hide('p2');show('p3');setStep(3);
+      if(mode==='table') renderGroup();
+      else if(mode==='ko'&&oddKO&&oddKO.groupMatches&&oddKO.groupMatches.length) renderOddKO();
+      else renderKnockout();
+    }
+    return true;
+  }catch(e){return false;}
+}
+var currentStep=1;
+function $(id){ return document.getElementById(id); }
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+function setStep(n){
+  currentStep=n;
+  [1,2,3].forEach(function(i){
+    var el = $('s'+i);
+    el.className = 'step'+(i===n?' active':i<n?' done':'');
+  });
+}
+function shuffle(a){
+  for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}
+  return a;
+}
+
+// ── Step 1: Teams ─────────────────────────────────────────────
+function setMode(m){
+  mode=m;
+  $('btnT').className='mode-btn'+(m==='table'?' active':'');
+  $('btnK').className='mode-btn'+(m==='ko'?' active':'');
+  checkTeams();
+}
+function addTeam(){
+  var v=$('inp').value.trim();
+  if(!v||teams.indexOf(v)>=0)return;
+  teams.push(v);
+  $('inp').value='';
+  renderTags();
+  checkTeams();
+  saveState();
+}
+function removeTeam(t){
+  teams=teams.filter(function(x){return x!==t;});
+  renderTags();
+  checkTeams();
+  saveState();
+}
+function renderTags(){
+  $('tags').innerHTML=teams.map(function(t){
+    return '<span class="tag">'+t+'<button onclick="removeTeam(\''+t.replace(/'/g,"\\'")+'\')" title="Remove">×</button></span>';
+  }).join('');
+}
+function isOddKO(){ return mode==='ko'&&teams.length%2===1; }
+function checkTeams(){
+  var ok=mode==='table'?teams.length>=3:teams.length>=2;
+  $('toDrawBtn').disabled=!ok;
+  var msg=mode==='table'
+    ?'Need at least 3 teams for group table. ('+teams.length+' added)'
+    :'Need at least 2 teams for knockout. ('+teams.length+' added)';
+  if(isOddKO()&&teams.length>=3) msg=teams.length+' teams (odd) — Best/Big Loser repechage format will be used.';
+  $('tinfo').textContent=msg;
+}
+function goDraw(){
+  drawn=[];sel=[];
+  renderPool();
+  renderFixtures();
+  $('startBtn').disabled=true;
+  $('dinfo').textContent='';
+  if(isOddKO()){
+    var pairs=Math.floor(teams.length/2);
+    $('hint').textContent='Pick '+pairs+' pairs ('+pairs*2+' teams). The unpaired team becomes the Bye team.';
+  } else {
+    $('hint').textContent='Click two teams to pair them, or use Random Draw.';
+  }
+  hide('p1');show('p2');
+  setStep(2);
+  saveState();
+}
+function goTeams(){
+  hide('p2');show('p1');setStep(1);
+}
+
+// ── Step 2: Draw ──────────────────────────────────────────────
+function renderPool(){
+  var used=[];
+  drawn.forEach(function(f){used.push(f.home,f.away);});
+  $('pool').innerHTML=teams.map(function(t){
+    var u=used.indexOf(t)>=0;
+    var s=sel.indexOf(t)>=0;
+    return '<span class="ball'+(u?' used':s?' sel':'')+'" onclick="pickBall(\''+t.replace(/'/g,"\\'")+'\')" >'+t+'</span>';
+  }).join('');
+}
+function pickBall(t){
+  if(drawn.some(function(f){return f.home===t||f.away===t;}))return;
+  var i=sel.indexOf(t);
+  if(i>=0){sel.splice(i,1);}
+  else{
+    sel.push(t);
+    if(sel.length===2){
+      drawn.push({home:sel[0],away:sel[1]});
+      sel=[];
+    }
+  }
+  renderPool();
+  renderFixtures();
+  checkDraw();
+  saveState();
+}
+function randomDraw(){
+  var pool=shuffle(teams.slice());
+  drawn=[];
+  var limit=Math.floor(pool.length/2);
+  for(var i=0;i<limit;i++){
+    drawn.push({home:pool[i*2],away:pool[i*2+1]});
+  }
+  sel=[];
+  renderPool();
+  renderFixtures();
+  checkDraw();
+  saveState();
+}
+function clearDraw(){
+  drawn=[];sel=[];
+  renderPool();
+  renderFixtures();
+  checkDraw();
+  saveState();
+}
+function renderFixtures(){
+  if(!drawn.length){$('fxlist').innerHTML='';return;}
+  $('fxlist').innerHTML=drawn.map(function(f,i){
+    return '<div class="fx-row"><span class="fx-n">'+(i+1)+'.</span>'
+      +'<span class="fx-h">'+f.home+'</span>'
+      +'<span class="fx-v">vs</span>'
+      +'<span class="fx-a">'+f.away+'</span>'
+      +'<button class="fx-del" onclick="removeFx('+i+')" title="Remove">✕</button></div>';
+  }).join('');
+}
+function removeFx(i){
+  drawn.splice(i,1);
+  renderPool();
+  renderFixtures();
+  checkDraw();
+  saveState();
+}
+function checkDraw(){
+  var used=[];
+  drawn.forEach(function(f){used.push(f.home,f.away);});
+  var valid,msg;
+  if(isOddKO()){
+    var need=Math.floor(teams.length/2);
+    valid=drawn.length===need;
+    var byeTeam=teams.filter(function(t){return used.indexOf(t)<0;})[0]||'';
+    msg=valid?'Ready! Bye team: '+byeTeam:drawn.length+'/'+need+' pairs drawn.';
+  } else {
+    var allPaired=teams.every(function(t){return used.indexOf(t)>=0;});
+    valid=drawn.length>0&&(mode==='ko'?allPaired:drawn.length>=1);
+    msg=valid?'Ready! '+drawn.length+' fixture(s) drawn.':'Pair all teams to continue.';
+  }
+  $('startBtn').disabled=!valid;
+  $('dinfo').textContent=msg;
+}
+
+// ── Step 3: Competition ───────────────────────────────────────
+function startComp(){
+  hide('p2');show('p3');setStep(3);
+  if(mode==='table'){
+    startGroupTable();
+  } else if(isOddKO()){
+    startOddKO();
+  } else {
+    startKnockout();
+  }
+  saveState();
+}
+
+// ── GROUP TABLE MODE ──────────────────────────────────────────
+function startGroupTable(){
+  standings={};
+  teams.forEach(function(t){
+    standings[t]={p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0};
+  });
+  matches=drawn.map(function(f,i){
+    return {id:i,home:f.home,away:f.away,hs:null,as:null,done:false};
+  });
+  renderGroup();
+}
+function renderGroup(){
+  var html='<div class="card"><h2>Group Standings</h2>';
+  var rows=teams.slice().sort(function(a,b){
+    var sa=standings[a],sb=standings[b];
+    if(sb.pts!==sa.pts)return sb.pts-sa.pts;
+    var gda=(sa.gf-sa.ga),gdb=(sb.gf-sb.ga);
+    if(gdb!==gda)return gdb-gda;
+    return sb.gf-sa.gf;
+  });
+  html+='<table class="gtable"><thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead><tbody>';
+  rows.forEach(function(t,i){
+    var s=standings[t];
+    var q=i<2?' class="qualify"':'';
+    html+='<tr><td'+q+'>'+(i+1)+'</td><td'+q+'>'+t+(i<2?' ✓':'')+'</td>'
+      +'<td>'+s.p+'</td><td>'+s.w+'</td><td>'+s.d+'</td><td>'+s.l+'</td>'
+      +'<td>'+s.gf+'</td><td>'+s.ga+'</td><td>'+(s.gf-s.ga)+'</td><td><b>'+s.pts+'</b></td></tr>';
+  });
+  html+='</tbody></table></div>';
+
+  html+='<div class="card"><h2>Fixtures</h2>';
+  matches.forEach(function(m){
+    html+=renderMatchCard(m,'group');
+  });
+  html+='</div>';
+
+  var allDone=matches.every(function(m){return m.done;});
+  if(allDone){
+    var sorted=teams.slice().sort(function(a,b){
+      var sa=standings[a],sb=standings[b];
+      if(sb.pts!==sa.pts)return sb.pts-sa.pts;
+      return (sb.gf-sb.ga)-(sa.gf-sa.ga);
+    });
+    html+='<div class="adv">🏆 Group complete! Top 2 advance: <b>'+sorted[0]+'</b> &amp; <b>'+sorted[1]+'</b></div>';
+  }
+
+  $('gSection').innerHTML=html;
+  $('mSection').innerHTML='';
+  $('cSection').innerHTML='';
+}
+function submitGroupScore(id){
+  var m=matches[id];
+  var hv=parseInt($('gh'+id).value);
+  var av=parseInt($('ga'+id).value);
+  if(isNaN(hv)||isNaN(av)||hv<0||av<0)return alert('Enter valid scores.');
+  m.hs=hv;m.as=av;m.done=true;
+  var sh=standings[m.home],sa=standings[m.away];
+  sh.p++;sa.p++;sh.gf+=hv;sh.ga+=av;sa.gf+=av;sa.ga+=hv;
+  if(hv>av){sh.w++;sh.pts+=3;sa.l++;}
+  else if(hv<av){sa.w++;sa.pts+=3;sh.l++;}
+  else{sh.d++;sh.pts++;sa.d++;sa.pts++;}
+  renderGroup();
+  saveState();
+}
+
+// ── KNOCKOUT MODE ─────────────────────────────────────────────
+function startKnockout(){
+  rounds={};
+  var r1=drawn.map(function(f,i){
+    return {id:'r1_'+i,home:f.home,away:f.away,hs:null,as:null,done:false,round:1};
+  });
+  rounds[1]=r1;
+  renderKnockout();
+}
+function renderKnockout(){
+  var html='';
+  var rkeys=Object.keys(rounds).map(Number).sort(function(a,b){return a-b;});
+  rkeys.forEach(function(r){
+    var ms=rounds[r];
+    var label=getRoundLabel(r,ms.length);
+    html+='<p class="rlabel">'+label+'</p>';
+    ms.forEach(function(m){
+      html+=renderMatchCard(m,'ko');
+    });
+  });
+  $('mSection').innerHTML=html?'<div class="card">'+html+'</div>':'';
+  $('gSection').innerHTML='';
+}
+function getRoundLabel(r,n){
+  if(n===1)return 'Final';
+  if(n===2)return 'Semi-Finals';
+  if(n===4)return 'Quarter-Finals';
+  return 'Round '+r;
+}
+function submitKOScore(id){
+  var m=findMatch(id);
+  if(!m)return;
+  var hv=parseInt($('gh'+id).value);
+  var av=parseInt($('ga'+id).value);
+  if(isNaN(hv)||isNaN(av)||hv<0||av<0)return alert('Enter valid scores.');
+  m.hs=hv;m.as=av;
+  if(hv===av){
+    m.needsPens=true;
+    renderKnockout();
+    saveState();
+    return;
+  }
+  m.hps=null;m.aps=null;m.needsPens=false;m.done=true;
+  checkKORound(m.round);
+  renderKnockout();
+  saveState();
+}
+function submitKOPens(id){
+  var m=findMatch(id);
+  if(!m)return;
+  var hp=parseInt($('php'+id).value);
+  var ap=parseInt($('pap'+id).value);
+  if(isNaN(hp)||isNaN(ap)||hp<0||ap<0)return alert('Enter valid penalty scores.');
+  if(hp===ap)return alert('Penalty shootout must have a winner.');
+  m.hps=hp;m.aps=ap;m.needsPens=false;m.done=true;
+  checkKORound(m.round);
+  renderKnockout();
+  saveState();
+}
+function findMatch(id){
+  var found=null;
+  Object.keys(rounds).forEach(function(r){
+    rounds[r].forEach(function(m){if(m.id===id)found=m;});
+  });
+  return found;
+}
+function checkKORound(r){
+  var ms=rounds[r];
+  if(!ms.every(function(m){return m.done;}))return;
+  var winners=ms.map(function(m){return getWinner(m);});
+  if(winners.length===1){
+    $('cSection').innerHTML='<div class="champ"><div class="trophy">🏆</div><h2>Champion: '+winners[0]+'</h2></div>';
+    return;
+  }
+  var nr=r+1;
+  var next=[];
+  for(var i=0;i+1<winners.length;i+=2){
+    next.push({id:'r'+nr+'_'+Math.floor(i/2),home:winners[i],away:winners[i+1],hs:null,as:null,hps:null,aps:null,done:false,round:nr});
+  }
+  if(winners.length%2===1){
+    next.push({id:'r'+nr+'_bye',home:winners[winners.length-1],away:'BYE',hs:1,as:0,done:true,round:nr});
+  }
+  rounds[nr]=next;
+}
+
+// ── ODD-TEAM REPECHAGE FORMAT (any odd number ≥ 3) ───────────
+// Phase 1 — Group games: floor(n/2) pairs play simultaneously
+// After all group games done:
+//   - Sort losers by GA ascending (fewest conceded = Best Loser)
+//   - Best Loser plays Bye team  → winner to SF pool, loser to elimination
+//   - Big Loser (most GA) plays that loser → winner to SF pool
+//   - Remaining losers (if any, e.g. 7-team: 1 extra) get byes into SF pool
+// Phase 2 — SF: group winners + repechage winners paired up
+// Phase 3 — Final (and further rounds if needed, standard KO)
+
+var oddKO = {
+  groupMatches: [],   // [{id,label,home,away,hs,as,done}]
+  repMatches: [],     // [{id,label,home,away,hs,as,done,locked}]
+  sfMatches: [],      // [{id,label,home,away,hs,as,done,locked}]
+  laterRounds: [],    // standard KO rounds after SFs if bracket > 2 SFs
+  byeTeam: null,
+  _phase: 'group'    // 'group' | 'rep' | 'sf' | 'done'
+};
+
+function startOddKO(){
+  var used=[];
+  drawn.forEach(function(f){used.push(f.home,f.away);});
+  var byeTeam=teams.filter(function(t){return used.indexOf(t)<0;})[0];
+  oddKO={
+    groupMatches: drawn.map(function(f,i){
+      return {id:'og'+i,label:'Game '+(i+1),home:f.home,away:f.away,hs:null,as:null,done:false,locked:false};
+    }),
+    repMatches:[],sfMatches:[],laterRounds:[],
+    byeTeam:byeTeam,
+    _phase:'group'
+  };
+  renderOddKO();
+}
+
+function getWinner(m){
+  if(m.hs===m.as) return m.hps>m.aps?m.home:m.away; // pens
+  return m.hs>m.as?m.home:m.away;
+}
+function getLoser(m){
+  if(m.hs===m.as) return m.hps>m.aps?m.away:m.home;
+  return m.hs>m.as?m.away:m.home;
+}
+function getLoserGA(m){
+  if(m.hs===m.as) return m.hs; // draw — use regular score for GA ranking
+  return m.hs>m.as?m.as:m.hs;
+}
+
+function submitOddKOScore(id){
+  var m=findOddKOMatch(id);
+  if(!m||m.locked)return;
+  var hv=parseInt($('gh'+id).value);
+  var av=parseInt($('ga'+id).value);
+  if(isNaN(hv)||isNaN(av)||hv<0||av<0)return alert('Enter valid scores.');
+  m.hs=hv;m.as=av;
+  if(hv===av){
+    m.needsPens=true;
+    renderOddKO();
+    saveState();
+    return;
+  }
+  m.hps=null;m.aps=null;m.needsPens=false;m.done=true;
+  advanceOddKO();
+  renderOddKO();
+  saveState();
+}
+function submitOddKOPens(id){
+  var m=findOddKOMatch(id);
+  if(!m)return;
+  var hp=parseInt($('php'+id).value);
+  var ap=parseInt($('pap'+id).value);
+  if(isNaN(hp)||isNaN(ap)||hp<0||ap<0)return alert('Enter valid penalty scores.');
+  if(hp===ap)return alert('Penalty shootout must have a winner.');
+  m.hps=hp;m.aps=ap;m.needsPens=false;m.done=true;
+  advanceOddKO();
+  renderOddKO();
+  saveState();
+}
+
+function findOddKOMatch(id){
+  var all=oddKO.groupMatches.concat(oddKO.repMatches,oddKO.sfMatches);
+  oddKO.laterRounds.forEach(function(r){all=all.concat(r);});
+  for(var i=0;i<all.length;i++){if(all[i].id===id)return all[i];}
+  return null;
+}
+
+function advanceOddKO(){
+  var gDone=oddKO.groupMatches.every(function(m){return m.done;});
+
+  // ── Build repechage after all group games done ──
+  if(gDone&&oddKO._phase==='group'){
+    oddKO._phase='rep';
+    var losers=oddKO.groupMatches.map(function(m){
+      return {team:getLoser(m),ga:getLoserGA(m)};
+    });
+    // sort ascending by GA: index 0 = best loser (fewest conceded), last = big loser
+    losers.sort(function(a,b){return a.ga-b.ga;});
+    var bestLoser=losers[0].team;
+    var bigLoser=losers[losers.length-1].team;
+    // middle losers (if any) get a direct bye to SF pool
+    oddKO._repByeTeams=losers.slice(1,losers.length-1).map(function(x){return x.team;});
+
+    // Rep game A: Best Loser vs Bye team
+    oddKO.repMatches.push({
+      id:'ra',label:'Repechage A — Best Loser vs Bye',
+      home:bestLoser,away:oddKO.byeTeam,
+      hs:null,as:null,done:false,locked:false
+    });
+    // Rep game B: Big Loser vs Rep A Loser (set up after A is done)
+    oddKO.repMatches.push({
+      id:'rb',label:'Repechage B — Big Loser vs Rep A Loser',
+      home:bigLoser,away:null,
+      hs:null,as:null,done:false,locked:true
+    });
+    oddKO._bigLoser=bigLoser;
+  }
+
+  // ── Unlock Rep B after Rep A done ──
+  var ra=findOddKOMatch('ra'), rb=findOddKOMatch('rb');
+  if(ra&&ra.done&&rb&&rb.locked){
+    rb.away=getLoser(ra);
+    rb.locked=false;
+  }
+
+  // ── Build SFs after all rep matches done ──
+  var repDone=oddKO.repMatches.length>0&&oddKO.repMatches.every(function(m){return m.done;});
+  if(repDone&&oddKO._phase==='rep'){
+    oddKO._phase='sf';
+    // SF pool: group winners + rep winners + rep bye teams
+    var groupWinners=oddKO.groupMatches.map(function(m){return getWinner(m);});
+    var repWinners=oddKO.repMatches.map(function(m){return getWinner(m);});
+    var sfPool=groupWinners.concat(repWinners).concat(oddKO._repByeTeams||[]);
+    // pair them up
+    for(var i=0;i+1<sfPool.length;i+=2){
+      oddKO.sfMatches.push({
+        id:'sf'+Math.floor(i/2),
+        label:'Semi-Final '+(Math.floor(i/2)+1),
+        home:sfPool[i],away:sfPool[i+1],
+        hs:null,as:null,done:false,locked:false
+      });
+    }
+    // odd SF pool member gets a bye
+    if(sfPool.length%2===1){
+      oddKO.sfMatches.push({
+        id:'sfbye',label:'Semi-Final Bye',
+        home:sfPool[sfPool.length-1],away:'BYE',
+        hs:1,as:0,done:true,locked:false
+      });
+    }
+  }
+
+  // ── Build later rounds (Final etc.) after all SFs done ──
+  var sfDone=oddKO.sfMatches.length>0&&oddKO.sfMatches.every(function(m){return m.done;});
+  if(sfDone&&oddKO._phase==='sf'){
+    oddKO._phase='later';
+    buildLaterRound(oddKO.sfMatches,0);
+  }
+  // keep advancing later rounds
+  if(oddKO._phase==='later'){
+    for(var ri=0;ri<oddKO.laterRounds.length;ri++){
+      var rnd=oddKO.laterRounds[ri];
+      if(rnd.every(function(m){return m.done;})){
+        var winners=rnd.map(function(m){return getWinner(m);});
+        if(winners.length===1){oddKO._phase='done';break;}
+        if(ri===oddKO.laterRounds.length-1){
+          buildLaterRound(rnd,ri+1);
+        }
+      }
+    }
+  }
+}
+
+function buildLaterRound(prevRound,idx){
+  var winners=prevRound.map(function(m){return getWinner(m);});
+  if(winners.length===1){oddKO._phase='done';return;}
+  var next=[];
+  for(var i=0;i+1<winners.length;i+=2){
+    next.push({id:'lr'+idx+'_'+Math.floor(i/2),
+      label:winners.length===2?'Final':'Round '+(idx+1)+' Match '+(Math.floor(i/2)+1),
+      home:winners[i],away:winners[i+1],hs:null,as:null,done:false,locked:false});
+  }
+  oddKO.laterRounds.push(next);
+}
+
+function renderOddKO(){
+  var html='';
+
+  html+='<div class="card"><h2>Group Phase</h2>';
+  oddKO.groupMatches.forEach(function(m){
+    html+='<p class="rlabel">'+m.label+'</p>'+renderOddKOCard(m);
+  });
+  html+='</div>';
+
+  if(oddKO.repMatches.length){
+    html+='<div class="card"><h2>Repechage</h2>';
+    oddKO.repMatches.forEach(function(m){
+      html+='<p class="rlabel">'+m.label+'</p>'+renderOddKOCard(m);
+    });
+    html+='</div>';
+  }
+
+  if(oddKO.sfMatches.length){
+    html+='<div class="card"><h2>Semi-Finals</h2>';
+    oddKO.sfMatches.forEach(function(m){
+      html+='<p class="rlabel">'+m.label+'</p>'+renderOddKOCard(m);
+    });
+    html+='</div>';
+  }
+
+  oddKO.laterRounds.forEach(function(rnd){
+    var lbl=rnd.length===1&&rnd[0].label==='Final'?'Final':'Knockout Round';
+    html+='<div class="card"><h2>'+lbl+'</h2>';
+    rnd.forEach(function(m){
+      html+='<p class="rlabel">'+m.label+'</p>'+renderOddKOCard(m);
+    });
+    html+='</div>';
+  });
+
+  if(oddKO._phase==='done'){
+    var lastRnd=oddKO.laterRounds[oddKO.laterRounds.length-1];
+    var champ=getWinner(lastRnd[0]);
+    html+='<div class="champ"><div class="trophy">🏆</div><h2>Champion: '+champ+'</h2></div>';
+  }
+
+  $('mSection').innerHTML=html;
+  $('gSection').innerHTML='';
+  $('cSection').innerHTML='';
+}
+
+function renderOddKOCard(m){
+  var html='<div class="mcard" style="flex-wrap:wrap">';
+  if(m.locked||(!m.away&&!m.done)){
+    html+='<span style="color:#475569;font-size:.88rem">Waiting for previous results…</span>';
+  } else if(m.done&&m.away==='BYE'){
+    html+='<span class="mteam win">'+m.home+'</span><span class="mvs">advances (BYE)</span>';
+  } else if(m.done){
+    var hw=m.hs>m.as||(m.hs===m.as&&m.hps>m.aps);
+    var scoreStr=m.hs+' – '+m.as;
+    if(m.hps!=null) scoreStr+=' <span style="font-size:.8rem;color:#a78bfa">(pens '+m.hps+'–'+m.aps+')</span>';
+    html+='<span class="mteam'+(hw?' win':' lose')+'">'+m.home+'</span>';
+    html+='<span class="mresult">'+scoreStr+'</span>';
+    html+='<span class="mteam'+(!hw?' win':' lose')+'">'+m.away+'</span>';
+    html+='<span class="mbadge bd">Done</span>';
+    html+='<button class="ftbtn" style="background:#475569;margin-left:auto" onclick="editOddKOScore(\''+m.id+'\')">Edit</button>';
+  } else if(m.needsPens){
+    html+='<span class="mteam">'+m.home+'</span>';
+    html+='<span class="mresult">'+m.hs+' – '+m.as+'</span>';
+    html+='<span class="mteam">'+m.away+'</span>';
+    html+='<span class="mbadge bpen">Pens</span>';
+    html+='<div class="pen-row">'
+      +'<span class="pen-label">🥅 Penalties:</span>'
+      +'<input id="php'+m.id+'" type="number" min="0" placeholder="0" style="width:50px;padding:.38rem;text-align:center;border-radius:5px;border:1px solid #7c3aed;background:#0f172a;color:#e2e8f0;font-size:1rem">'
+      +'<span class="ssep">–</span>'
+      +'<input id="pap'+m.id+'" type="number" min="0" placeholder="0" style="width:50px;padding:.38rem;text-align:center;border-radius:5px;border:1px solid #7c3aed;background:#0f172a;color:#e2e8f0;font-size:1rem">'
+      +'<button class="penbtn" onclick="submitOddKOPens(\''+m.id+'\')">Confirm</button>'
+      +'</div>';
+  } else {
+    html+='<span class="mteam">'+m.home+'</span>';
+    html+='<span class="mvs">vs</span>';
+    html+='<span class="mteam">'+m.away+'</span>';
+    html+='<span class="mbadge bl">Live</span>';
+    html+='<span class="sinputs">'
+      +'<input id="gh'+m.id+'" type="number" min="0" placeholder="0" value="'+(m.hs!==null?m.hs:'')+'">'
+      +'<span class="ssep">–</span>'
+      +'<input id="ga'+m.id+'" type="number" min="0" placeholder="0" value="'+(m.as!==null?m.as:'')+'">'
+      +'<button class="ftbtn" onclick="submitOddKOScore(\''+m.id+'\')">Set</button>'
+      +'</span>';
+  }
+  html+='</div>';
+  return html;
+}
+
+function editOddKOScore(id){
+  var m=findOddKOMatch(id);
+  if(!m)return;
+  // figure out which phase this match belongs to and roll back everything after it
+  var inGroup=oddKO.groupMatches.some(function(x){return x.id===id;});
+  var inRep=oddKO.repMatches.some(function(x){return x.id===id;});
+  var inSF=oddKO.sfMatches.some(function(x){return x.id===id;});
+  m.done=false;m.needsPens=false;m.hs=null;m.as=null;m.hps=null;m.aps=null;
+  if(inGroup){
+    // reset everything after group phase
+    oddKO.repMatches=[];oddKO.sfMatches=[];oddKO.laterRounds=[];
+    oddKO._phase='group';oddKO._bigLoser=null;oddKO._repByeTeams=[];
+  } else if(inRep){
+    // if editing rep A, also reset rep B and beyond
+    if(id==='ra'){
+      var rb=findOddKOMatch('rb');
+      if(rb){rb.done=false;rb.needsPens=false;rb.hs=null;rb.as=null;rb.hps=null;rb.aps=null;rb.away=null;rb.locked=true;}
+    }
+    oddKO.sfMatches=[];oddKO.laterRounds=[];
+    oddKO._phase='rep';
+  } else if(inSF){
+    oddKO.laterRounds=[];
+    oddKO._phase='sf';
+  } else {
+    // later round — find which index and trim from there
+    for(var ri=0;ri<oddKO.laterRounds.length;ri++){
+      if(oddKO.laterRounds[ri].some(function(x){return x.id===id;})){
+        oddKO.laterRounds=oddKO.laterRounds.slice(0,ri+1);
+        oddKO._phase='later';
+        break;
+      }
+    }
+  }
+  $('cSection').innerHTML='';
+  renderOddKO();saveState();
+}
+
+// ── shared match card ─────────────────────────────────────────
+function renderMatchCard(m,type){
+  var id=m.id;
+  var html='<div class="mcard" style="flex-wrap:wrap">';
+  if(m.done){
+    var hw=m.hs>m.as||(m.hs===m.as&&m.hps>m.aps);
+    var aw=!hw;
+    var scoreStr=m.hs+' – '+m.as;
+    if(m.hps!=null) scoreStr+=' <span style="font-size:.8rem;color:#a78bfa">(pens '+m.hps+'–'+m.aps+')</span>';
+    html+='<span class="mteam'+(hw?' win':' lose')+'">'+m.home+'</span>';
+    html+='<span class="mresult">'+scoreStr+'</span>';
+    html+='<span class="mteam'+(aw?' win':' lose')+'">'+m.away+'</span>';
+    html+='<span class="mbadge bd">Done</span>';
+    html+='<button class="ftbtn" style="background:#475569;margin-left:auto" onclick="editScore(\''+id+'\',\''+type+'\')">Edit</button>';
+  } else if(m.away==='BYE'){
+    html+='<span class="mteam win">'+m.home+'</span><span class="mvs">advances (BYE)</span>';
+  } else if(m.needsPens){
+    html+='<span class="mteam">'+m.home+'</span>';
+    html+='<span class="mresult">'+m.hs+' – '+m.as+'</span>';
+    html+='<span class="mteam">'+m.away+'</span>';
+    html+='<span class="mbadge bpen">Pens</span>';
+    html+='<div class="pen-row">'
+      +'<span class="pen-label">🥅 Penalties:</span>'
+      +'<input id="php'+id+'" type="number" min="0" placeholder="0" style="width:50px;padding:.38rem;text-align:center;border-radius:5px;border:1px solid #7c3aed;background:#0f172a;color:#e2e8f0;font-size:1rem">'
+      +'<span class="ssep">–</span>'
+      +'<input id="pap'+id+'" type="number" min="0" placeholder="0" style="width:50px;padding:.38rem;text-align:center;border-radius:5px;border:1px solid #7c3aed;background:#0f172a;color:#e2e8f0;font-size:1rem">'
+      +'<button class="penbtn" onclick="'+(type==='ko'?'submitKOPens':'submitOddKOPens')+'(\''+id+'\')">Confirm</button>'
+      +'</div>';
+  } else {
+    html+='<span class="mteam">'+m.home+'</span>';
+    html+='<span class="mvs">vs</span>';
+    html+='<span class="mteam">'+m.away+'</span>';
+    html+='<span class="mbadge bl">Live</span>';
+    html+='<span class="sinputs">'
+      +'<input id="gh'+id+'" type="number" min="0" placeholder="0" value="'+(m.hs!==null?m.hs:'')+'">'
+      +'<span class="ssep">–</span>'
+      +'<input id="ga'+id+'" type="number" min="0" placeholder="0" value="'+(m.as!==null?m.as:'')+'">'
+      +'<button class="ftbtn" onclick="'+(type==='group'?'submitGroupScore':'submitKOScore')+'(\''+id+'\')">Set</button>'
+      +'</span>';
+  }
+  html+='</div>';
+  return html;
+}
+
+function editScore(id,type){
+  if(type==='group'){
+    var m=matches[id];
+    if(!m)return;
+    // reverse standings
+    var sh=standings[m.home],sa=standings[m.away];
+    sh.p--;sa.p--;sh.gf-=m.hs;sh.ga-=m.as;sa.gf-=m.as;sa.ga-=m.hs;
+    if(m.hs>m.as){sh.w--;sh.pts-=3;sa.l--;}
+    else if(m.hs<m.as){sa.w--;sa.pts-=3;sh.l--;}
+    else{sh.d--;sh.pts--;sa.d--;sa.pts--;}
+    m.done=false;m.hs=null;m.as=null;
+    renderGroup();saveState();
+  } else if(type==='ko'){
+    var m=findMatch(id);
+    if(!m)return;
+    m.done=false;m.needsPens=false;m.hs=null;m.as=null;m.hps=null;m.aps=null;
+    // strip all later rounds that depended on this result
+    var r=m.round;
+    var rkeys=Object.keys(rounds).map(Number).filter(function(k){return k>r;});
+    rkeys.forEach(function(k){delete rounds[k];});
+    $('cSection').innerHTML='';
+    renderKnockout();saveState();
+  }
+}
+
+// ── reset ─────────────────────────────────────────────────────
+function resetAll(){
+  if(!confirm('Reset everything and start a new competition?'))return;
+  teams=[];drawn=[];sel=[];matches=[];rounds={};standings={};oddKO={};
+  localStorage.removeItem(SAVE_KEY);
+  renderTags();checkTeams();
+  hide('p2');hide('p3');show('p1');setStep(1);
+}
+
+// ── init ──────────────────────────────────────────────────────
+(function seedIfEmpty(){
+  if(localStorage.getItem(SAVE_KEY)) return; // don't overwrite existing saves
+  var state = {
+    mode: 'ko',
+    teams: ['Cosmic FC','SR FC','Panthers FC','Vignan B','Winners FC'],
+    drawn: [
+      {home:'SR FC', away:'Vignan B'},
+      {home:'Cosmic FC', away:'Panthers FC'}
+    ],
+    matches: [],
+    rounds: {},
+    standings: {},
+    oddKO: {
+      byeTeam: 'Winners FC',
+      _phase: 'rep',
+      _bigLoser: 'SR FC',
+      _repByeTeams: [],
+      groupMatches: [
+        {
+          id:'og0', label:'Game 1',
+          home:'SR FC', away:'Vignan B',
+          hs:0, as:0, hps:3, aps:4,
+          done:true, locked:false, needsPens:false
+        },
+        {
+          id:'og1', label:'Game 2',
+          home:'Cosmic FC', away:'Panthers FC',
+          hs:0, as:2, hps:null, aps:null,
+          done:true, locked:false, needsPens:false
+        }
+      ],
+      repMatches: [
+        {
+          id:'ra', label:'Repechage A \u2014 Best Loser vs Bye',
+          home:'SR FC', away:'Winners FC',
+          hs:null, as:null, hps:null, aps:null,
+          done:false, locked:false, needsPens:false
+        },
+        {
+          id:'rb', label:'Repechage B \u2014 Big Loser vs Rep A Loser',
+          home:'Cosmic FC', away:null,
+          hs:null, as:null, hps:null, aps:null,
+          done:false, locked:true, needsPens:false
+        }
+      ],
+      sfMatches: [],
+      laterRounds: []
+    },
+    _step: 3
+  };
+  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+})();
+loadState();
+</script>
+</body>
+</html>
